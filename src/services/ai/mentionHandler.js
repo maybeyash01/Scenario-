@@ -3,6 +3,9 @@ import { aiConfig } from '../../config/ai.js';
 import { checkRateLimit } from '../../utils/rateLimiter.js';
 import { logger } from '../../utils/logger.js';
 import { AiServiceError } from './aiService.js';
+import { getGuildConfig } from '../config/guildConfig.js';
+import { getAiUserPreferences } from './preferencesService.js';
+import { buildAiSystemInstruction } from './promptContext.js';
 
 const DISCORD_MESSAGE_LIMIT = 2_000;
 
@@ -45,8 +48,15 @@ export async function handleAiMention(message, client, { config = aiConfig, serv
   }
 
   try {
-    const result = await service.generate(prompt);
-    await message.reply({ content: truncateMessage(result.text), allowedMentions: { parse: [] } });
+    const guildConfig = await getGuildConfig(client, message.guild.id);
+    const guildAi = guildConfig.ai || {};
+    if (guildAi.enabled === false) {
+      await message.reply({ content: 'Scenario AI is disabled for this server.', allowedMentions: { parse: [] } });
+      return true;
+    }
+    const userPreferences = await getAiUserPreferences(client, message.guild.id, message.author.id);
+    const result = await service.generate(prompt, { systemInstruction: buildAiSystemInstruction({ guildAi, userPreferences }) });
+    await message.reply({ content: truncateMessage(result.text), allowedMentions: { parse: [], repliedUser: userPreferences.mentionReplies } });
   } catch (error) {
     const messageText = error instanceof AiServiceError && error.code === 'AI_NOT_CONFIGURED'
       ? 'Scenario AI is not configured on this bot.'

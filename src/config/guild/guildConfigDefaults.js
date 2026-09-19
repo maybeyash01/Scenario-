@@ -12,4 +12,10 @@ export const GUILD_CONFIG_DEFAULTS = {
     dmOnClose: true,
     disabledCommands: {},
     disabledCategories: {},
+    ai: {
+        enabled: true,
+        personality: 'professional',
+        responseLength: 'balanced',
+        emoji: 'minimal',
+    },
 };
