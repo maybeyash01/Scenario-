@@ -17,6 +17,7 @@ import { initializeMusic } from './services/music/riffySetup.js';
 import { shutdownMusic } from './services/music/playerHandler.js';
 import pkg from '../package.json' with { type: 'json' };
 import { EXPECTED_SCHEMA_VERSION, EXPECTED_SCHEMA_LABEL } from './config/database/schemaVersion.js';
+import { aiService } from './services/ai/aiService.js';
 
 class TitanBot extends Client {
   constructor() {
@@ -45,6 +46,7 @@ class TitanBot extends Client {
     this.modals = new Collection();
     this.cooldowns = new Collection();
     this.db = null;
+    this.aiService = aiService;
     this.rest = new REST({ version: '10' }).setToken(config.bot.token);
   }
 

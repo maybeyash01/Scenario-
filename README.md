@@ -127,6 +127,28 @@ TitanBot is fully containerized for easy deployment.
 
 This starts the bot and PostgreSQL. The compose file sets `POSTGRES_SSL=false` and `AUTO_MIGRATE=true` for the bundled database. Music uses public Lavalink v4 nodes from `lavalink/nodes.json` by default.
 
+### Scenario AI
+
+The `/ai` command uses a resilient provider chain: **Grok (xAI)** first, **Google Gemini** second, and **OpenRouter** last. Configure one or more provider keys only through deployment environment variables or your local `.env` file—never commit them. Requests use a bounded timeout and automatically move to the next configured provider when a provider fails.
+
+```env
+AI_ENABLED=true
+AI_TIMEOUT_MS=25000
+AI_MENTION_ENABLED=true
+AI_RATE_LIMIT_ATTEMPTS=3
+AI_RATE_LIMIT_WINDOW_MS=60000
+XAI_API_KEY=...
+XAI_MODEL=grok-4-1-fast-reasoning
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+OPENROUTER_API_KEY=...
+OPENROUTER_MODEL=openai/gpt-4.1-mini
+```
+
+Mention the bot in a server channel to start a normal conversation; mention replies are per-user, per-server rate limited and never permit `@everyone`/role pings. Set `AI_MENTION_ENABLED=false` to keep AI slash-command-only.
+
+All model variables are optional; the documented defaults are used when omitted. If no key is configured, `/ai` returns a configuration message without disclosing environment details.
+
 ### Music
 
 Music uses [Lavalink v4](https://github.com/lavalink-devs/Lavalink) via [Riffy](https://github.com/riffy-rb/riffy), similar to [Musicify](https://github.com/codebymitch/Musicify).
