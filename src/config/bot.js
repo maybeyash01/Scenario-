@@ -23,8 +23,8 @@ export const botConfig = {
     // 5 = Competing
     activities: [
       {
-        name: "Custom Status", // required by Discord API, not shown in the client
-        state: "stalking",     // this is what people actually see
+        name: "Scenario", // required by Discord API, not shown in the client
+        state: "Scenario AI",     // this is what people actually see
         type: 4,               // Custom
       },
     ],
@@ -63,7 +63,7 @@ export const botConfig = {
     defaultQuestions: [
       { question: "What is your name?", required: true },
       { question: "How old are you?", required: true },
-      { question: "Why do you want to join?", required: true },
+      { question: "What is your issue?", required: true },
     ],
 
     // Embed colors by application status.
@@ -141,7 +141,7 @@ export const botConfig = {
     },
     footer: {
       // Default footer text used in bot embeds.
-      text: "Titan Bot",
+      text: "Scenario Bot",
       // Footer icon URL (null = no icon).
       icon: null,
     },
@@ -175,15 +175,15 @@ export const botConfig = {
     baseBankCapacity: 100000,
 
     // Daily reward amount.
-    dailyAmount: 100,
+    dailyAmount: 1,
 
     // Work command random payout range.
-    workMin: 10,
-    workMax: 100,
+    workMin: 1,
+    workMax: 15,
 
     // Beg command random payout range.
-    begMin: 5,
-    begMax: 50,
+    begMin: 0,
+    begMax: 0,
 
     // Command cooldowns (milliseconds).
     cooldowns: {
