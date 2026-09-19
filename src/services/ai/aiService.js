@@ -44,24 +44,31 @@ function extractGeminiText(payload) {
 }
 
 function createOpenAiCompatibleProvider(config, fetchImpl) {
-  return async (prompt) => {
+  return async (prompt, systemInstruction) => {
     const payload = await requestJson(fetchImpl, `${config.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: config.model, messages: [{ role: 'user', content: prompt }], max_tokens: config.maxOutputTokens }),
+      body: JSON.stringify({ model: config.model, messages: [
+        ...(systemInstruction ? [{ role: 'system', content: systemInstruction }] : []),
+        { role: 'user', content: prompt },
+      ], max_tokens: config.maxOutputTokens }),
     }, config.timeoutMs);
     return extractOpenAiText(payload);
   };
 }
 
 function createGeminiProvider(config, fetchImpl) {
-  return async (prompt) => {
+  return async (prompt, systemInstruction) => {
     const url = new URL(`${config.baseUrl}/models/${encodeURIComponent(config.model)}:generateContent`);
     url.searchParams.set('key', config.apiKey);
     const payload = await requestJson(fetchImpl, url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: config.maxOutputTokens } }),
+      body: JSON.stringify({
+        ...(systemInstruction ? { systemInstruction: { parts: [{ text: systemInstruction }] } } : {}),
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: config.maxOutputTokens },
+      }),
     }, config.timeoutMs);
     return extractGeminiText(payload);
   };
@@ -78,16 +85,19 @@ export function createAiService({ config = aiConfig, fetchImpl = globalThis.fetc
   };
 
   return {
-    async generate(prompt) {
+    async generate(prompt, { systemInstruction = '', providerOrder = PROVIDER_NAMES } = {}) {
       if (!config.enabled) throw new AiServiceError('AI features are disabled', { code: 'AI_DISABLED' });
       if (typeof prompt !== 'string' || !prompt.trim()) throw new AiServiceError('A prompt is required', { code: 'AI_INVALID_PROMPT' });
       if (prompt.length > config.maxPromptLength) throw new AiServiceError(`Prompt exceeds ${config.maxPromptLength} characters`, { code: 'AI_PROMPT_TOO_LONG' });
 
+      const order = Array.isArray(providerOrder)
+        ? [...new Set(providerOrder)].filter((name) => PROVIDER_NAMES.includes(name))
+        : PROVIDER_NAMES;
       const attempts = [];
-      for (const providerName of PROVIDER_NAMES) {
+      for (const providerName of order) {
         if (!config.providers?.[providerName]?.apiKey) continue;
         try {
-          const text = await providers[providerName](prompt.trim());
+          const text = await providers[providerName](prompt.trim(), systemInstruction);
           logger.info('AI provider completed request', { event: 'ai.request.success', provider: providerName });
           return { text, provider: providerName };
         } catch (error) {

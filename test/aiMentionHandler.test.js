@@ -36,7 +36,7 @@ test('answers an AI mention and suppresses outbound mentions in model output', a
   });
 
   assert.equal(handled, true);
-  assert.deepEqual(message.replies, [{ content: 'Answer to hello @everyone', allowedMentions: { parse: [] } }]);
+  assert.deepEqual(message.replies, [{ content: 'Answer to hello @everyone', allowedMentions: { parse: [], repliedUser: false } }]);
 });
 
 test('rate limits mention conversations per guild and user', async () => {
