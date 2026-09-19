@@ -12,6 +12,7 @@ import { getCommandPrefix, getBotMessage, isBotOwner, isCommandCategoryEnabled, 
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
 import { isCommandEnabled } from '../services/commandAccessService.js';
+import { handleAiMention } from '../services/ai/mentionHandler.js';
 import {
   getCountingGameConfig,
   saveCountingGameConfig,
@@ -28,14 +29,18 @@ export default {
     try {
       if (message.author.bot || !message.guild) return;
 
-      logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
+      logger.debug('Message received', { event: 'discord.message.received', guildId: message.guild.id, userId: message.author.id, channelId: message.channel.id });
 
       const countingProcessed = await handleCountingGame(message, client);
       if (countingProcessed) {
         return;
       }
 
-      await handlePrefixCommand(message, client);
+      const prefixCommandHandled = await handlePrefixCommand(message, client);
+      if (!prefixCommandHandled) {
+        const aiMentionHandled = await handleAiMention(message, client);
+        if (aiMentionHandled) return;
+      }
 
       await handleLeveling(message, client);
     } catch (error) {
@@ -51,7 +56,7 @@ async function handlePrefixCommand(message, client) {
     const parsed = parsePrefixCommand(message.content, prefix);
     
     if (!parsed) {
-      return; 
+      return false;
     }
 
     let { commandName, args } = parsed;
@@ -62,7 +67,7 @@ async function handlePrefixCommand(message, client) {
       args = [musicPrefixShortcut, ...args];
     }
 
-    logger.info(`Prefix command detected: ${commandName}, args: ${args.join(', ')}`);
+    logger.info(`Prefix command detected: ${commandName} (${args.length} arguments)`);
 
     const resolvedCommandName = resolveCommandAlias(commandName);
     logger.info(`Resolved command name: ${resolvedCommandName}`);
@@ -70,7 +75,7 @@ async function handlePrefixCommand(message, client) {
 
     if (!command) {
       logger.warn(`Command not found: ${resolvedCommandName}`);
-      return; 
+      return true;
     }
 
     if (isMaintenanceMode() && !isBotOwner(message.author.id)) {
@@ -81,7 +86,7 @@ async function handlePrefixCommand(message, client) {
           color: 'warning',
         })],
       }).catch(() => {});
-      return;
+      return true;
     }
 
     if (!isCommandCategoryEnabled(command.category)) {
@@ -92,7 +97,7 @@ async function handlePrefixCommand(message, client) {
           color: 'error',
         })],
       }).catch(() => {});
-      return;
+      return true;
     }
 
     const restriction = getPrefixRestriction(command, args, resolveSubcommandAlias);
@@ -105,7 +110,7 @@ async function handlePrefixCommand(message, client) {
         });
         await message.channel.send({ embeds: [embed] }).catch(() => {});
       }
-      return;
+      return true;
     }
 
     if (!(await isCommandEnabled(client, message.guild.id, resolvePrefixAccessKey(command.data, args), command.category))) {
@@ -115,7 +120,7 @@ async function handlePrefixCommand(message, client) {
         color: 'error',
       });
       await message.channel.send({ embeds: [embed] }).catch(() => {});
-      return;
+      return true;
     }
 
     const mockInteractionForProtection = {
@@ -135,14 +140,16 @@ async function handlePrefixCommand(message, client) {
         color: 'error',
       });
       await message.channel.send({ embeds: [embed] }).catch(() => {});
-      return;
+      return true;
     }
 
     logger.info(`Executing prefix command: ${prefix}${commandName} (resolved to ${resolvedCommandName}) by ${message.author.tag}`);
     
     await executePrefixCommand(command, message, args, client, prefix, guildConfig);
+    return true;
   } catch (error) {
     logger.error('Error handling prefix command:', error);
+    return true;
   }
 }
 
