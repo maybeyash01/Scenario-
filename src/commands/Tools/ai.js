@@ -5,6 +5,8 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { aiService, AiServiceError } from '../../services/ai/aiService.js';
 import { aiConfig } from '../../config/ai.js';
 import { checkRateLimit } from '../../utils/rateLimiter.js';
+import { getAiUserPreferences } from '../../services/ai/preferencesService.js';
+import { buildAiSystemInstruction } from '../../services/ai/promptContext.js';
 
 const MAX_DISCORD_EMBED_DESCRIPTION = 4_000;
 
@@ -41,7 +43,13 @@ export default {
     }
 
     try {
-      const { text, provider } = await service.generate(prompt);
+      const guildAi = guildConfig?.ai || {};
+      if (guildAi.enabled === false) {
+        await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: 'Scenario AI is disabled for this server.' });
+        return;
+      }
+      const userPreferences = await getAiUserPreferences(client, interaction.guildId, interaction.user.id);
+      const { text, provider } = await service.generate(prompt, { systemInstruction: buildAiSystemInstruction({ guildAi, userPreferences }) });
       await InteractionHelper.safeEditReply(interaction, {
         embeds: [infoEmbed('Scenario AI', truncateForDiscord(text)).setFooter({ text: `Provider: ${provider}` })],
       });

@@ -57,6 +57,18 @@ const VerificationConfigSchema = z
   })
   .optional();
 
+const AutomationGuildConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  emergencyStop: z.boolean().default(false),
+}).default({ enabled: false, emergencyStop: false });
+
+const AiGuildConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  personality: z.enum(['professional', 'friendly', 'study', 'minimal', 'detailed']).default('professional'),
+  responseLength: z.enum(['concise', 'balanced', 'detailed']).default('balanced'),
+  emoji: z.enum(['none', 'minimal', 'normal', 'expressive']).default('minimal'),
+}).default({ enabled: true, personality: 'professional', responseLength: 'balanced', emoji: 'minimal' });
+
 export const GuildConfigSchema = z
   .object({
     prefix: z.string().optional(),
@@ -76,7 +88,9 @@ export const GuildConfigSchema = z
     logging: LoggingConfigSchema.optional(),
     ticketLogging: TicketLoggingSchema.optional(),
     enableLogging: z.boolean().optional(),
-    verification: VerificationConfigSchema
+    verification: VerificationConfigSchema,
+    ai: AiGuildConfigSchema.optional(),
+    automation: AutomationGuildConfigSchema.optional()
   })
   .passthrough();
 

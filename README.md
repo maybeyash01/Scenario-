@@ -149,6 +149,19 @@ Mention the bot in a server channel to start a normal conversation; mention repl
 
 All model variables are optional; the documented defaults are used when omitted. If no key is configured, `/ai` returns a configuration message without disclosing environment details.
 
+### Scenario AI controls
+
+Use `/scenario settings view`, `/scenario settings edit`, and `/scenario settings reset` to manage the server-wide AI enablement, personality, response length, and emoji level. Changes require **Manage Server** and apply to both `/ai` and bot mentions. Users can use `/scenario preferences view`, `set`, `reset`, and `memory-delete` for their per-server language, style, response length, reply-mention, and memory-consent preferences.
+
+The current memory control is consent and preference storage only; Scenario does **not** persist conversation memories, documents, automated routing, or execute AI-suggested Discord actions in this release. Provider credentials and fallback order remain deployment-controlled environment configuration.
+
+
+### Persistent reminders and automatic actions
+
+`/reminder create <when> <text>` stores a one-time reminder in the configured database. The `when` value must be an ISO-8601 future timestamp that includes an explicit timezone (for example, `2030-01-01T09:00:00+01:00`); use `/reminder list` and `/reminder cancel` to manage your own reminders. A minute scheduler delivers due reminders only when automatic actions are enabled.
+
+A configured bot owner can use `/scenario settings edit` to set **automatic actions** or the **emergency stop**. Both controls are disabled by default. The emergency stop prevents all registered automatic actions immediately; it does not delete queued reminders. Reminders are currently one-time, server-channel reminders only. Their completion state is persisted before posting to prevent duplicate delivery after a restart, which deliberately favors at-most-once delivery if the process crashes during a send.
+
 ### Music
 
 Music uses [Lavalink v4](https://github.com/lavalink-devs/Lavalink) via [Riffy](https://github.com/riffy-rb/riffy), similar to [Musicify](https://github.com/codebymitch/Musicify).
