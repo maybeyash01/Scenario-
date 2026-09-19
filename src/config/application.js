@@ -3,6 +3,7 @@ import path from "path";
 import botConfig, { validateConfig } from "./bot.js";
 import { shopConfig as shop } from "./shop/index.js";
 import { pgConfig } from "./database/postgres.js";
+import { aiConfig } from "./ai.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -71,6 +72,8 @@ const appConfig = {
   },
 
   shop,
+
+  ai: aiConfig,
 
   features: {
     ...botConfig.features,

@@ -474,6 +474,7 @@ export const botConfig = {
     community: true,
     fun: true,
     music: true,
+    ai: process.env.AI_ENABLED !== 'false',
   },
 };
 
